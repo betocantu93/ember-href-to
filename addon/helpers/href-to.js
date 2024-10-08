@@ -1,5 +1,6 @@
-import Helper from "@ember/component/helper";
-import { getOwner } from "@ember/application";
+import Helper from '@ember/component/helper';
+import { getOwner } from '@ember/application';
+import { action } from '@ember/object';
 
 export function hrefTo(routing, params) {
   return routing.generateURL(...getParamsForGenerateURL(params));
@@ -21,18 +22,31 @@ function getParamsForGenerateURL(params) {
 
 export default class HrefToHelper extends Helper {
   get routing() {
-    return getOwner(this).lookup("service:-routing");
+    return getOwner(this).lookup('service:-routing');
   }
 
   get router() {
-    return getOwner(this).lookup("service:router");
+    return getOwner(this).lookup('service:router');
+  }
+
+  @action
+  _recompute() {
+    this.recompute();
   }
 
   init() {
     super.init();
 
-    if (this.router && this.router.on) { // skip if the router service is mocked
-      this.router.on("routeDidChange", this.recompute.bind(this));
+    if (this.router && this.router.on) {
+      // skip if the router service is mocked
+      this.router.on('routeDidChange', this._recompute);
+    }
+  }
+
+  willDestroy() {
+    super.willDestroy();
+    if (this.router && this.router.on) {
+      this.router.off('routeDidChange', this._recompute);
     }
   }
 
